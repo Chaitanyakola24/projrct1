@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>QnAOverflow</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
+<style>
+    body {
+      font-family: sans-serif;
+      background-color: #FEE8B0;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 20px 0;
+      color: #4E4E4E;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      margin-bottom: 10px;
+    }
+
+    .question-box {
+      border: 1px solid #EAEAEA;
+      padding: 10px;
+      margin-bottom: 20px;
+      background-color: #FFFFFF;
+    }
+
+    .answer-box {
+      border: 1px solid #EAEAEA;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: #F8F8F8;
+    }
+
+    #new-question {
+      margin: 20px 10%;
+      border: 1px solid #EAEAEA;
+      padding: 20px;
+      background-color: #FFFFFF;
+    }
+
+    .nav {
+      color: #FFFFFF;
+      background-color: #73BBC9;
+      padding: 3%;
+      justify-content: space-evenly;
+      display: flex;
+    }
+
+    .nav a {
+      text-decoration: none;
+      color: #000000;
+      margin: 0 10px;
+    }
+
+    .search {
+      padding: 5px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    #questions {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    #new-question h2 {
+      margin-top: 0;
+    }
+
+    #new-question input[type="text"],
+    #new-question select {
+      width: 100%;
+      padding: 5px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      border: 1px solid #EAEAEA;
+    }
+
+    #new-question button {
+      padding: 5px 10px;
+      border-radius: 5px;
+      border: none;
+      background-color: #73BBC9;
+      color: #FFFFFF;
+      cursor: pointer;
+    }
+
+    #new-question button:hover {
+      background-color: #367B8B;
+    }
+
+    #new-question button:focus {
+      outline: none;
+    }
+
+    #new-question button:active {
+      background-color: #1F4D58;
+    }
+
+    #new-question button,
+    #new-question input[type="text"],
+    #new-question select {
+      display: block;
+    }
+
+    #new-question button:last-child {
+      margin-top: 10px;
+      background-color: #E74C3C;
+    }
+
+    #savedText,
+    #openedText {
+      white-space: pre-line;
+      margin-bottom: 10px;
+    }
+</style>
+<body>
+  <nav class="nav">
+    <a class="logo" href=" ">QNA</a>
+    <a href="#">HOME</a>
+    <a href="#">USERGUIDES</a>
+    <a href="#">ABOUT</a>
+    <a href="#">SUPPORT</a>
+    <input type="text" placeholder="Search.." class="search"/>
+  </nav>
+  
+  <h1>QnAOverflow</h1>
+  
+  <div id="questions">
+    <!-- This will be populated with questions and answers from the backend -->
+  </div>
+  
+  <div id="new-question">
+    <h2>Check all the information here</h2>
+    <p id="savedText"></p>
+    <p id="openedText"></p>
+    
+    <div>
+      <h2>Ask a Question</h2>
+      <input type="text" placeholder="Enter your question" id="askInput">
+      <button onclick="ask()">Ask</button>
+    </div>
+
+    <div>
+      <h2>Submit Answer</h2>
+      <input type="text" placeholder="Your answer" id="submitInput">
+      <select id="questionList"></select>
+      <button onclick="submitAnswer()">Submit</button>
+    </div>
+
+    <button onclick="clearData()">Clear Data</button>
+  </div>
+
+  <script>
+    var askItems = JSON.parse(localStorage.getItem("askItems")) || [];
+    var submitItems = JSON.parse(localStorage.getItem("submitItems")) || [];
+
+    function ask() {
+      var askItem = document.getElementById("askInput").value;
+
+      if (askItem) {
+        askItems.push({ question: askItem, answers: [] });
+        localStorage.setItem("askItems", JSON.stringify(askItems));
+        populateQuestionList();
+      }
+
+      document.getElementById("savedText").innerHTML = "Ask Items:<br>" + JSON.stringify(askItems) + "<br>Submit Items:<br>" + JSON.stringify(submitItems);
+    }
+
+    function submitAnswer() {
+      var submitItem = document.getElementById("submitInput").value;
+      var questionIndex = document.getElementById("questionList").selectedIndex;
+
+      if (submitItem && questionIndex >= 0) {
+        submitItems.push(submitItem);
+        askItems[questionIndex].answers.push({ answer: submitItem, likes: 0, dislikes: 0, comments: [] });
+        localStorage.setItem("submitItems", JSON.stringify(submitItems));
+        localStorage.setItem("askItems", JSON.stringify(askItems));
+      }
+
+      document.getElementById("savedText").innerHTML = "Ask Items:<br>" + JSON.stringify(askItems) + "<br>Submit Items:<br>" + JSON.stringify(submitItems);
+    }
+
+    function get() {
+      askItems = JSON.parse(localStorage.getItem("askItems")) || [];
+      submitItems = JSON.parse(localStorage.getItem("submitItems")) || [];
+
+      document.getElementById("openedText").innerHTML = "Ask Items OPENED:<br>" + JSON.stringify(askItems) + "<br>Submit Items OPENED:<br>" + JSON.stringify(submitItems);
+    }
+
+    function clearData() {
+      localStorage.removeItem("askItems");
+      localStorage.removeItem("submitItems");
+      askItems = [];
+      submitItems = [];
+      document.getElementById("savedText").innerHTML = "";
+      document.getElementById("openedText").innerHTML = "";
+      populateQuestionList();
+    }
+
+    function populateQuestionList() {
+      var questionList = document.getElementById("questionList");
+      questionList.innerHTML = "";
+
+      askItems.forEach(function (item, index) {
+        var option = document.createElement("option");
+        option.value = index;
+        option.text = item.question;
+        questionList.appendChild(option);
+      });
+
+      // Generate HTML for displaying questions and answers
+      var questionsContainer = document.getElementById("questions");
+      questionsContainer.innerHTML = "";
+
+      askItems.forEach(function (item, index) {
+        var questionBox = document.createElement("div");
+        questionBox.classList.add("question-box");
+
+        var question = document.createElement("h3");
+        question.innerText = item.question;
+        questionBox.appendChild(question);
+
+        var answers = item.answers;
+
+        if (answers.length > 0) {
+          var answerHeading = document.createElement("h4");
+          answerHeading.innerText = "Answers:";
+          questionBox.appendChild(answerHeading);
+
+          answers.forEach(function (answer) {
+            var answerBox = document.createElement("div");
+            answerBox.classList.add("answer-box");
+
+            var answerText = document.createElement("p");
+            answerText.innerText = answer.answer;
+            answerBox.appendChild(answerText);
+
+            var likeButton = document.createElement("button");
+            likeButton.innerText = "Like";
+            likeButton.addEventListener("click", function () {
+              answer.likes++;
+              updateAnswer(answerBox, answer);
+            });
+            answerBox.appendChild(likeButton);
+
+            var dislikeButton = document.createElement("button");
+            dislikeButton.innerText = "Dislike";
+            dislikeButton.addEventListener("click", function () {
+              answer.dislikes++;
+              updateAnswer(answerBox, answer);
+            });
+            answerBox.appendChild(dislikeButton);
+
+            var commentInput = document.createElement("input");
+            commentInput.type = "text";
+            commentInput.placeholder = "Add a comment";
+            answerBox.appendChild(commentInput);
+
+            var commentButton = document.createElement("button");
+            commentButton.innerText = "Comment";
+            commentButton.addEventListener("click", function () {
+              var comment = commentInput.value;
+              if (comment) {
+                answer.comments.push(comment);
+                updateAnswer(answerBox, answer);
+              }
+            });
+            answerBox.appendChild(commentButton);
+
+            updateAnswer(answerBox, answer);
+            questionBox.appendChild(answerBox);
+          });
+        }
+
+        questionsContainer.appendChild(questionBox);
+      });
+    }
+
+    function updateAnswer(answerBox, answer) {
+      answerBox.innerHTML = "";
+
+      var answerText = document.createElement("p");
+      answerText.innerText = answer.answer;
+      answerBox.appendChild(answerText);
+
+      var likeButton = document.createElement("button");
+      likeButton.innerText = "Like (" + answer.likes + ")";
+      answerBox.appendChild(likeButton);
+
+      var dislikeButton = document.createElement("button");
+      dislikeButton.innerText = "Dislike (" + answer.dislikes + ")";
+      answerBox.appendChild(dislikeButton);
+
+      var commentInput = document.createElement("input");
+      commentInput.type = "text";
+      commentInput.placeholder = "Add a comment";
+      answerBox.appendChild(commentInput);
+
+      var commentButton = document.createElement("button");
+      commentButton.innerText = "Comment";
+      answerBox.appendChild(commentButton);
+
+      answer.comments.forEach(function (comment) {
+        var commentText = document.createElement("p");
+        commentText.innerText = "- " + comment;
+        answerBox.appendChild(commentText);
+      });
+
+      likeButton.addEventListener("click", function () {
+        answer.likes++;
+        likeButton.innerText = "Like (" + answer.likes + ")";
+      });
+
+      dislikeButton.addEventListener("click", function () {
+        answer.dislikes++;
+        dislikeButton.innerText = "Dislike (" + answer.dislikes + ")";
+      });
+
+      commentButton.addEventListener("click", function () {
+        var comment = commentInput.value;
+        if (comment) {
+          answer.comments.push(comment);
+          var commentText = document.createElement("p");
+          commentText.innerText = "- " + comment;
+          answerBox.appendChild(commentText);
+          commentInput.value = "";
+        }
+      });
+    }
+
+    populateQuestionList();
+  </script>
+</body>
+</html>
